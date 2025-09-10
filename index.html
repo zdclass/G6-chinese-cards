@@ -3,211 +3,550 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>生詞練習卡 - 第三課 談遇見更好的自己</title>
+    <title>全方位生詞學習中心 - 第三課</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Noto Sans TC', sans-serif;
-            touch-action: manipulation; /* 禁用雙擊縮放 */
+        body { font-family: 'Noto Sans TC', sans-serif; touch-action: manipulation; }
+        .screen { display: none; }
+        .main-menu-btn { transition: all 0.2s ease-in-out; }
+        .main-menu-btn:hover { transform: translateY(-4px) scale(1.02); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+        
+        /* Flashcard Styles */
+        .flashcard-container { perspective: 1000px; }
+        .flashcard-inner { position: relative; width: 100%; height: 100%; transition: transform 0.6s; transform-style: preserve-3d; }
+        .flashcard-container.is-flipped .flashcard-inner { transform: rotateY(180deg); }
+        .flashcard-front, .flashcard-back { position: absolute; width: 100%; height: 100%; -webkit-backface-visibility: hidden; backface-visibility: hidden; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 1.5rem; border-radius: 1.5rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1); overflow-y: auto; }
+        .flashcard-front { background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); color: #0c4a6e; }
+        .flashcard-back { background: linear-gradient(135deg, #fefce8 0%, #fffbeb 100%); color: #713f12; transform: rotateY(180deg); }
+        
+        /* Matching Game Styles */
+        .match-item { transition: all 0.5s ease-in-out; cursor: pointer; border: 2px solid #cbd5e1; }
+        .match-item:hover { background-color: #f1f5f9; border-color: #94a3b8; }
+        .match-item.selected { background-color: #bae6fd; border-color: #38bdf8; transform: scale(1.05); }
+        /* --- UPDATED ---: This class now controls the disappearing animation */
+        .match-item.matched { 
+            opacity: 0;
+            transform: scale(0.9);
+            height: 0;
+            padding-top: 0;
+            padding-bottom: 0;
+            margin-top: -2px; /* to compensate border */
+            margin-bottom: 0;
+            border-width: 0;
+            pointer-events: none;
         }
-        .card-container {
-            perspective: 1000px;
-        }
-        .card-inner {
-            position: relative;
-            width: 100%;
-            height: 100%;
-            transition: transform 0.6s;
-            transform-style: preserve-3d;
-        }
-        .card-container.flipped .card-inner {
-            transform: rotateY(180deg);
-        }
-        .card-front, .card-back {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            -webkit-backface-visibility: hidden;
-            backface-visibility: hidden;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            padding: 2.5rem; /* 增加內邊距 */
-            border-radius: 1.5rem; /* 更圓的邊角 */
-            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-        }
-        .card-front {
-            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-            color: #0c4a6e;
-        }
-        .card-back {
-            background: linear-gradient(135deg, #fefce8 0%, #fffbeb 100%);
-            color: #713f12;
-            transform: rotateY(180deg);
-            overflow-y: auto; /* 當內容過多時滾動 */
-        }
-        .button {
-            transition: all 0.2s ease-in-out;
-        }
-        .button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-        }
-        .button:active {
-            transform: translateY(0);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
+        .match-item.incorrect { background-color: #fee2e2; border-color: #f87171; animation: shake 0.5s; }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+
+        /* Memory Game Styles */
+        .memory-card { perspective: 1000px; cursor: pointer; }
+        .memory-card-inner { position: relative; width: 100%; height: 100%; transition: transform 0.5s; transform-style: preserve-3d; }
+        .memory-card.is-flipped .memory-card-inner { transform: rotateY(180deg); }
+        .memory-card-front, .memory-card-back { position: absolute; width: 100%; height: 100%; -webkit-backface-visibility: hidden; backface-visibility: hidden; display: flex; justify-content: center; align-items: center; border-radius: 0.75rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .memory-card-front { background: linear-gradient(135deg, #60a5fa, #3b82f6); color: white; font-size: 2rem; }
+        .memory-card-back { background-color: #f1f5f9; transform: rotateY(180deg); padding: 8px; font-size: 0.9rem; text-align: center; }
+        .memory-card.matched { opacity: 0; transform: scale(0); transition: all 0.5s; }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 flex items-center justify-center min-h-screen p-4">
+<body class="bg-slate-100 flex items-center justify-center min-h-screen p-4">
 
-    <div class="w-full max-w-2xl mx-auto">
-        <header class="text-center mb-6">
-            <h1 class="text-3xl font-bold text-sky-800">第三課 談遇見更好的自己</h1>
-            <p class="text-slate-500 mt-1">生詞練習卡</p>
-        </header>
+    <div class="w-full max-w-3xl mx-auto">
+        
+        <!-- Main Menu Screen -->
+        <div id="screen-menu" class="screen" style="display: block;">
+            <div class="text-center mb-8">
+                <h1 class="text-3xl sm:text-4xl font-bold text-sky-800">全方位生詞學習中心</h1>
+                <p class="text-slate-500 mt-2">第三課 談遇見更好的自己</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+                <button onclick="startMode('flashcard-word')" class="main-menu-btn bg-white p-6 rounded-xl shadow-md text-left">
+                    <h2 class="text-xl font-bold text-slate-800">📖 閃卡練習</h2>
+                    <p class="text-slate-500 mt-1">看詞語，回想解釋和造句。</p>
+                </button>
+                <button onclick="startMode('flashcard-def')" class="main-menu-btn bg-white p-6 rounded-xl shadow-md text-left">
+                    <h2 class="text-xl font-bold text-slate-800">🤔 反向閃卡</h2>
+                    <p class="text-slate-500 mt-1">看解釋，回想正確的詞語。</p>
+                </button>
+                <button onclick="startMode('matching')" class="main-menu-btn bg-white p-6 rounded-xl shadow-md text-left">
+                    <h2 class="text-xl font-bold text-slate-800">🔗 配對遊戲</h2>
+                    <p class="text-slate-500 mt-1">將詞語和對應的解釋連起來！</p>
+                </button>
+                <button onclick="startMode('memory')" class="main-menu-btn bg-white p-6 rounded-xl shadow-md text-left">
+                    <h2 class="text-xl font-bold text-slate-800">🧠 記憶遊戲</h2>
+                    <p class="text-slate-500 mt-1">翻開卡牌，找出所有配對。</p>
+                </button>
+                <button onclick="startMode('quiz')" class="main-menu-btn bg-white p-6 rounded-xl shadow-md text-left md:col-span-2">
+                    <h2 class="text-xl font-bold text-slate-800">✏️ 綜合測驗</h2>
+                    <p class="text-slate-500 mt-1">透過填空題，檢驗你的學習成果。</p>
+                </button>
+            </div>
+        </div>
 
-        <main>
-            <!-- Flashcard Container -->
-            <div id="card-container" class="card-container w-full h-80 sm:h-96 mb-6 cursor-pointer" onclick="flipCard()">
-                <div id="card-inner" class="card-inner">
-                    <!-- Card Front -->
-                    <div class="card-front">
-                        <h2 id="word" class="text-5xl md:text-7xl font-bold tracking-wider"></h2>
-                        <div class="absolute bottom-4 text-xs text-slate-400">點擊翻面</div>
+        <!-- Universal Header for modes -->
+        <div id="mode-header" class="hidden items-center mb-4">
+            <button onclick="showScreen('menu')" class="bg-white text-slate-600 px-4 py-2 rounded-lg shadow-sm hover:bg-slate-100">返回主選單</button>
+            <h2 id="mode-title" class="text-xl font-bold text-sky-800 mx-auto"></h2>
+            <div class="w-24"></div> <!-- Placeholder for centering title -->
+        </div>
+
+        <!-- Flashcard Screen -->
+        <div id="screen-flashcard" class="screen">
+            <div class="flashcard-container w-full h-80 sm:h-96 mb-6 cursor-pointer" onclick="this.classList.toggle('is-flipped')">
+                <div class="flashcard-inner">
+                    <div class="flashcard-front">
+                        <p id="flashcard-front-text" class="text-4xl md:text-6xl font-bold text-center"></p>
                     </div>
-                    <!-- Card Back -->
-                    <div class="card-back">
-                        <div class="w-full text-left">
-                            <h3 class="text-xl font-bold text-amber-800 mb-2">【解釋】</h3>
-                            <p id="definition" class="text-base md:text-lg mb-4 whitespace-pre-line"></p>
-                            <h3 class="text-xl font-bold text-amber-800 mb-2">【造句】</h3>
-                            <p id="sentence" class="text-base md:text-lg whitespace-pre-line"></p>
+                    <div class="flashcard-back">
+                        <div id="flashcard-back-content" class="text-center">
+                             <h3 id="flashcard-back-title" class="text-2xl md:text-3xl font-bold mb-4"></h3>
+                             <p id="flashcard-back-def" class="text-base md:text-lg whitespace-pre-line mb-4"></p>
+                             <p id="flashcard-back-sentence" class="text-base md:text-lg whitespace-pre-line text-amber-700"></p>
                         </div>
-                         <div class="absolute bottom-4 text-xs text-slate-400">點擊翻面</div>
                     </div>
                 </div>
             </div>
-
-            <!-- Progress Bar -->
-            <div class="flex items-center justify-center mb-6">
-                 <div id="progress-text" class="text-sm font-medium text-slate-600 mr-4">1 / 15</div>
-                 <div class="w-full bg-slate-200 rounded-full h-2.5">
-                    <div id="progress-bar" class="bg-sky-600 h-2.5 rounded-full" style="width: 0%"></div>
-                </div>
+             <div class="flex justify-between items-center">
+                <button id="flashcard-prev" class="bg-white py-3 px-6 rounded-full shadow-md">上一個</button>
+                <div id="flashcard-progress" class="text-slate-600"></div>
+                <button id="flashcard-next" class="bg-sky-600 text-white font-bold py-3 px-6 rounded-full shadow-lg">下一個</button>
             </div>
+        </div>
 
-            <!-- Navigation Buttons -->
-            <div class="flex justify-between items-center">
-                <button id="prev-btn" class="button bg-white text-slate-700 py-3 px-6 rounded-full shadow-md flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
-                    上一個
-                </button>
-                <button id="flip-btn-mobile" class="button bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 px-6 rounded-full shadow-lg md:hidden">
-                    翻面
-                </button>
-                <button id="next-btn" class="button bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 px-6 rounded-full shadow-lg flex items-center">
-                    下一個
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+        <!-- Matching Game Screen -->
+        <div id="screen-matching" class="screen">
+             <p id="matching-status" class="text-center text-slate-600 mb-4 h-6"></p>
+             <div class="grid grid-cols-2 gap-4">
+                 <div id="matching-col-1" class="space-y-3"></div>
+                 <div id="matching-col-2" class="space-y-3"></div>
+             </div>
+        </div>
+
+        <!-- Memory Game Screen -->
+        <div id="screen-memory" class="screen">
+             <div class="flex justify-between items-center mb-4">
+                <p class="text-slate-600">已找到配對: <span id="memory-found">0</span> / <span id="memory-total"></span></p>
+                <p class="text-slate-600">步數: <span id="memory-moves">0</span></p>
+            </div>
+            <div id="memory-grid" class="grid grid-cols-4 gap-2 sm:gap-3"></div>
+        </div>
+
+        <!-- Quiz Screen -->
+        <div id="screen-quiz" class="screen bg-white p-6 sm:p-8 rounded-2xl shadow-lg">
+            <!-- Quiz content will be injected here -->
+        </div>
+        
+    </div>
+
+<script>
+// --- VOCABULARY DATA ---
+const vocabulary = [
+    { word: "揭示", definition: "揭露、公布。", sentence: "這起事件深刻______了性別平等的重要。" },
+    { word: "卓越", definition: "非常優秀，超乎常人。", sentence: "他的領導才能______，頗受主管重視。" },
+    { word: "培養", definition: "長期策畫和訓練。", sentence: "作文能力的______，可從多看、多讀、多寫三方面著手。" },
+    { word: "總裁", definition: "銀行或財團的最高行政負責人。", sentence: "總公司宣布，明年度將任命他為新一任______。" },
+    { word: "瑣事", definition: "細小零碎的事情。", sentence: "他原本月底要出國旅遊，因為______纏身，所以暫緩計畫。" },
+    { word: "方仲永", definition: "指天資聰穎但後天未努力而致平庸的人。", sentence: "______的故事告訴我們，天資再高，也需要後天的學習才能精進。" },
+    { word: "耕田", definition: "泛指耕種田地的一切活動。", sentence: "雖然豔陽高照，農夫仍然不辭辛苦的在田裡______。" },
+    { word: "賺錢", definition: "賺取財利。", sentence: "我們一旦步入社會，就會知道______的辛苦。" },
+    { word: "聰穎", definition: "非常聰明。", sentence: "弟弟既______又用功，成績相當出色。" },
+    { word: "惋惜", definition: "嘆惜、令人感覺可惜。", sentence: "這麼聰明的人竟誤入歧途，不免令人______。" },
+    { word: "欠缺", definition: "短少、不夠。", sentence: "這家公司因______資金導致周轉不靈，已宣告破產。" },
+    { word: "驕傲自滿", definition: "自以為了不起而傲慢自大。", sentence: "我們不能因為有一點點成就而______。" },
+    { word: "昨天", definition: "前一日。", sentence: "他因為______連夜趕報告，現在累得呼呼大睡。" },
+    { word: "耕耘", definition: "比喻付出精神和勞力。", sentence: "一分______，一分收穫。" },
+    { word: "茁壯", definition: "成長壯大。", sentence: "嫩苗要經過細心呵護，才能成長______。" }
+];
+const fullSentences = [
+    "這起事件深刻揭示了性別平等的重要。",
+    "他的領導才能卓越，頗受主管重視。",
+    "作文能力的培養，可從多看、多讀、多寫三方面著手。",
+    "總公司宣布，明年度將任命他為新一任總裁。",
+    "他原本月底要出國旅遊，因為瑣事纏身，所以暫緩計畫。",
+    "方仲永的故事告訴我們，天資再高，也需要後天的學習才能精進。",
+    "雖然豔陽高照，農夫仍然不辭辛苦的在田裡耕種。",
+    "我們一旦步入社會，就會知道賺錢的辛苦。",
+    "弟弟既聰穎又用功，成績相當出色。",
+    "這麼聰明的人竟誤入歧途，不免令人惋惜。",
+    "這家公司因欠缺資金導致周轉不靈，已宣告破產。",
+    "我們不能因為有一點點成就而驕傲自滿。",
+    "他因為昨天連夜趕報告，現在累得呼呼大睡。",
+    "一分耕耘，一分收穫。",
+    "嫩苗要經過細心呵護，才能成長茁壯。"
+];
+
+
+// --- UTILS ---
+function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+}
+
+const allScreens = document.querySelectorAll('.screen');
+const modeHeader = document.getElementById('mode-header');
+const modeTitle = document.getElementById('mode-title');
+
+function showScreen(screenId) {
+    allScreens.forEach(s => s.style.display = 'none');
+    modeHeader.style.display = 'none';
+
+    if (screenId === 'menu') {
+        document.getElementById('screen-menu').style.display = 'block';
+    } else {
+        modeHeader.style.display = 'flex';
+        document.getElementById(`screen-${screenId}`).style.display = 'block';
+    }
+}
+
+function startMode(mode) {
+    const titles = {
+        'flashcard-word': '閃卡練習 (看詞語)',
+        'flashcard-def': '反向閃卡 (看解釋)',
+        'matching': '配對遊戲',
+        'memory': '記憶遊戲',
+        'quiz': '綜合測驗'
+    };
+    modeTitle.textContent = titles[mode];
+    
+    if (mode.startsWith('flashcard')) {
+        initFlashcards(mode === 'flashcard-word');
+        showScreen('flashcard');
+    } else if (mode === 'matching') {
+        initMatchingGame();
+        showScreen('matching');
+    } else if (mode === 'memory') {
+        initMemoryGame();
+        showScreen('memory');
+    } else if (mode === 'quiz') {
+        initQuiz(vocabulary);
+        showScreen('quiz');
+    }
+}
+
+// --- FLASHCARD LOGIC ---
+let flashcardIndex = 0;
+let isWordFront = true;
+const flashcardContainer = document.querySelector('.flashcard-container');
+const fcFrontText = document.getElementById('flashcard-front-text');
+const fcBackTitle = document.getElementById('flashcard-back-title');
+const fcBackDef = document.getElementById('flashcard-back-def');
+const fcBackSentence = document.getElementById('flashcard-back-sentence');
+const fcProgress = document.getElementById('flashcard-progress');
+
+function initFlashcards(wordIsFront) {
+    flashcardIndex = 0;
+    isWordFront = wordIsFront;
+    shuffleArray(vocabulary);
+    updateFlashcard();
+}
+
+function updateFlashcard() {
+    const card = vocabulary[flashcardIndex];
+    const originalIndex = vocabulary.findIndex(v => v.word === card.word);
+    if (isWordFront) {
+        fcFrontText.textContent = card.word;
+        fcBackTitle.textContent = card.word;
+        fcBackDef.textContent = card.definition;
+        fcBackSentence.textContent = `例句：${fullSentences[originalIndex]}`;
+    } else {
+        fcFrontText.textContent = card.definition;
+        fcBackTitle.textContent = card.word;
+        fcBackDef.textContent = card.definition;
+        fcBackSentence.textContent = `例句：${fullSentences[originalIndex]}`;
+    }
+    fcProgress.textContent = `${flashcardIndex + 1} / ${vocabulary.length}`;
+    flashcardContainer.classList.remove('is-flipped');
+}
+
+document.getElementById('flashcard-next').addEventListener('click', () => {
+    flashcardIndex = (flashcardIndex + 1) % vocabulary.length;
+    updateFlashcard();
+});
+document.getElementById('flashcard-prev').addEventListener('click', () => {
+    flashcardIndex = (flashcardIndex - 1 + vocabulary.length) % vocabulary.length;
+    updateFlashcard();
+});
+
+
+// --- MATCHING GAME LOGIC ---
+let selectedWord = null, selectedDef = null;
+let matchedCount = 0;
+const matchingCol1 = document.getElementById('matching-col-1');
+const matchingCol2 = document.getElementById('matching-col-2');
+const matchingStatus = document.getElementById('matching-status');
+
+function initMatchingGame() {
+    matchingCol1.innerHTML = '';
+    matchingCol2.innerHTML = '';
+    selectedWord = null;
+    selectedDef = null;
+    matchedCount = 0;
+    matchingStatus.textContent = `已配對: 0 / ${vocabulary.length}`;
+
+    const words = shuffleArray([...vocabulary]);
+    const defs = shuffleArray([...vocabulary]);
+
+    words.forEach(item => {
+        const div = document.createElement('div');
+        div.textContent = item.word;
+        div.dataset.word = item.word;
+        div.className = 'match-item p-4 rounded-lg text-center';
+        div.onclick = () => selectMatchItem(div, 'word');
+        matchingCol1.appendChild(div);
+    });
+
+    defs.forEach(item => {
+        const div = document.createElement('div');
+        div.textContent = item.definition;
+        div.dataset.word = item.word;
+        div.className = 'match-item p-4 rounded-lg text-center';
+        div.onclick = () => selectMatchItem(div, 'def');
+        matchingCol2.appendChild(div);
+    });
+}
+
+function selectMatchItem(element, type) {
+    if (element.classList.contains('matched')) return;
+
+    if (type === 'word') {
+        if (selectedWord) selectedWord.classList.remove('selected');
+        selectedWord = element;
+        selectedWord.classList.add('selected');
+    } else {
+        if (selectedDef) selectedDef.classList.remove('selected');
+        selectedDef = element;
+        selectedDef.classList.add('selected');
+    }
+
+    if (selectedWord && selectedDef) {
+        if (selectedWord.dataset.word === selectedDef.dataset.word) {
+            selectedWord.classList.add('matched');
+            selectedDef.classList.add('matched');
+            selectedWord.classList.remove('selected');
+            selectedDef.classList.remove('selected');
+            selectedWord = null;
+            selectedDef = null;
+            matchedCount++;
+            matchingStatus.textContent = `已配對: ${matchedCount} / ${vocabulary.length}`;
+            if (matchedCount === vocabulary.length) {
+                matchingStatus.textContent = '恭喜！全部配對成功！';
+            }
+        } else {
+            selectedWord.classList.add('incorrect');
+            selectedDef.classList.add('incorrect');
+            setTimeout(() => {
+                if (selectedWord) selectedWord.classList.remove('incorrect', 'selected');
+                if (selectedDef) selectedDef.classList.remove('incorrect', 'selected');
+                selectedWord = null;
+                selectedDef = null;
+            }, 500);
+        }
+    }
+}
+
+
+// --- MEMORY GAME LOGIC ---
+let flippedCards = [];
+let moves = 0;
+let memoryMatchedCount = 0;
+let memoryGameVocab = [];
+const memoryGrid = document.getElementById('memory-grid');
+
+function initMemoryGame() {
+    memoryGrid.innerHTML = '';
+    moves = 0;
+    memoryMatchedCount = 0;
+    flippedCards = [];
+
+    // --- UPDATED ---: Select 8 random words for the game
+    memoryGameVocab = shuffleArray([...vocabulary]).slice(0, 8);
+
+    document.getElementById('memory-moves').textContent = 0;
+    document.getElementById('memory-found').textContent = 0;
+    document.getElementById('memory-total').textContent = memoryGameVocab.length;
+
+    let cardsData = [];
+    memoryGameVocab.forEach(item => {
+        cardsData.push({ type: 'word', content: item.word, matchId: item.word });
+        cardsData.push({ type: 'def', content: item.definition, matchId: item.word });
+    });
+    shuffleArray(cardsData);
+
+    cardsData.forEach(data => {
+        const card = document.createElement('div');
+        card.className = 'memory-card h-24';
+        card.dataset.matchId = data.matchId;
+        card.innerHTML = `
+            <div class="memory-card-inner">
+                <div class="memory-card-front">?</div>
+                <div class="memory-card-back">${data.content}</div>
+            </div>
+        `;
+        card.addEventListener('click', () => flipMemoryCard(card));
+        memoryGrid.appendChild(card);
+    });
+}
+
+function flipMemoryCard(card) {
+    if (flippedCards.length < 2 && !card.classList.contains('is-flipped') && !card.classList.contains('matched')) {
+        card.classList.add('is-flipped');
+        flippedCards.push(card);
+
+        if (flippedCards.length === 2) {
+            moves++;
+            document.getElementById('memory-moves').textContent = moves;
+            checkMemoryMatch();
+        }
+    }
+}
+
+function checkMemoryMatch() {
+    const [card1, card2] = flippedCards;
+    if (card1.dataset.matchId === card2.dataset.matchId) {
+        setTimeout(() => {
+            card1.classList.add('matched');
+            card2.classList.add('matched');
+            memoryMatchedCount++;
+            document.getElementById('memory-found').textContent = memoryMatchedCount;
+            if(memoryMatchedCount === memoryGameVocab.length) {
+                // Game over, maybe show a message
+            }
+        }, 500);
+    } else {
+        setTimeout(() => {
+            card1.classList.remove('is-flipped');
+            card2.classList.remove('is-flipped');
+        }, 1000);
+    }
+    setTimeout(() => { flippedCards = []; }, 1000);
+}
+
+
+// --- QUIZ LOGIC ---
+const quizScreen = document.getElementById('screen-quiz');
+let quizQuestions = [];
+let currentQuizIndex = 0;
+let score = 0;
+let incorrectAnswers = [];
+
+function initQuiz(questionsData) {
+    currentQuizIndex = 0;
+    score = 0;
+    incorrectAnswers = [];
+    
+    let tempQuestionsData = [...questionsData]; // Create a mutable copy
+
+    quizQuestions = tempQuestionsData.map(item => {
+        const otherWords = vocabulary.filter(v => v.word !== item.word).map(v => v.word);
+        shuffleArray(otherWords);
+        const distractors = otherWords.slice(0, 3);
+        const options = [item.word, ...distractors];
+        shuffleArray(options);
+        return {
+            original: item, // Store original item
+            text: item.sentence,
+            options: options,
+            correctAnswer: item.word
+        };
+    });
+    shuffleArray(quizQuestions);
+    
+    displayQuizQuestion();
+}
+
+function displayQuizQuestion() {
+    if (currentQuizIndex >= quizQuestions.length) {
+        displayQuizResults();
+        return;
+    }
+    
+    const question = quizQuestions[currentQuizIndex];
+    const progress = (currentQuizIndex / quizQuestions.length) * 100;
+
+    quizScreen.innerHTML = `
+        <header class="mb-6">
+            <div class="flex justify-between items-center mb-2">
+                <h1 class="text-xl sm:text-2xl font-bold text-sky-800">生詞理解測驗</h1>
+                <div class="text-sm font-medium text-slate-500">問題 ${currentQuizIndex + 1} / ${quizQuestions.length}</div>
+            </div>
+            <div class="w-full bg-slate-200 rounded-full h-2.5">
+                <div class="bg-sky-600 h-2.5 rounded-full transition-all duration-300" style="width: ${progress}%"></div>
+            </div>
+        </header>
+        <main>
+            <div class="bg-slate-100 p-4 sm:p-6 rounded-lg mb-6">
+               <p class="text-lg sm:text-xl text-center font-medium h-24 flex items-center justify-center">${question.text}</p>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                ${question.options.map(opt => `<button class="quiz-option-btn w-full p-4 border-2 border-slate-300 rounded-lg text-lg bg-white hover:bg-sky-100 hover:border-sky-400" onclick="selectQuizAnswer(this, '${opt}', '${question.correctAnswer}')">${opt}</button>`).join('')}
+            </div>
+            <div class="mt-4 text-center h-6">
+                 <p id="quiz-feedback" class="font-bold"></p>
+            </div>
+            <div class="mt-6 text-center">
+                <button id="quiz-next-btn" class="hidden w-full sm:w-auto bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 px-12 rounded-full shadow-lg" onclick="nextQuizQuestion()">
+                    下一題
                 </button>
             </div>
         </main>
-    </div>
+    `;
+}
 
-    <script>
-        const vocabulary = [
-            { word: "揭示", definition: "揭露、公布。", sentence: "這起事件深刻揭示了性別平等的重要。" },
-            { word: "卓越", definition: "非常優秀，超乎常人。", sentence: "他的領導才能卓越，頗受主管重視。" },
-            { word: "培養", definition: "⑴ 長期策畫和訓練。\n⑵ 在適宜的環境中培植養育。", sentence: "⑴ 作文能力的培養，可從多看、多讀、多寫三方面著手。\n⑵ 目前本地香菇的栽培都是用太空包培養菌種。" },
-            { word: "總裁", definition: "某些政黨首領的名稱。銀行或財團亦設總裁。", sentence: "總公司宣布，明年度將任命他為新一任總裁。" },
-            { word: "瑣事", definition: "細小零碎的事情。", sentence: "他原本月底要出國旅遊，因為瑣事纏身，所以暫緩計畫。" },
-            { word: "方仲永", definition: "北宋時期江西金溪人，是北宋文學家王安石的散文〈傷仲永〉中的主角。方仲永天資聰穎，五歲時能作詩，被稱為神童。然而他最後因未求上進，導致才華荒廢。", sentence: "方仲永的故事告訴我們，天資再高，也需要後天的學習才能精進。" },
-            { word: "耕田", definition: "泛指耕種田地的一切活動。", sentence: "雖然豔陽高照，農夫仍然不辭辛苦的在田裡耕種。" },
-            { word: "賺錢", definition: "⑴ 賺取財利。\n⑵ 利潤較高的。", sentence: "⑴ 我們一旦步入社會，就會知道賺錢的辛苦。\n⑵ 根據調查，媒體經濟是未來十年數一數二賺錢的行業。" },
-            { word: "聰穎", definition: "非常聰明。", sentence: "弟弟既聰穎又用功，成績相當出色。" },
-            { word: "惋惜", definition: "嘆惜、令人感覺可惜。", sentence: "這麼聰明的人竟誤入歧途，不免令人惋惜。" },
-            { word: "欠缺", definition: "短少、不夠。", sentence: "這家公司因欠缺資金導致周轉不靈，已宣告破產。" },
-            { word: "驕傲自滿", definition: "自以為了不起而傲慢自大，感覺已經滿足。", sentence: "我們不能因為有一點點成就而驕傲自滿。" },
-            { word: "昨天", definition: "前一日。", sentence: "他因為昨天連夜趕報告，現在累得呼呼大睡。" },
-            { word: "耕耘", definition: "⑴ 比喻付出精神和勞力。\n⑵ 耕田與除草。泛指農田耕作的事情。", sentence: "⑴ 一分耕耘，一分收穫。\n⑵ 一番辛苦耕耘後，眼見稻浪層層，真令人欣慰。" },
-            { word: "茁壯", definition: "成長壯大。", sentence: "嫩苗要經過細心呵護，才能成長茁壯。" }
-        ];
+function selectQuizAnswer(btn, selected, correct) {
+    document.querySelectorAll('.quiz-option-btn').forEach(b => {
+        b.disabled = true;
+        if (b.textContent === correct) b.classList.add('!bg-green-500', '!text-white', '!border-green-600');
+    });
 
-        let currentCardIndex = 0;
-        let isFlipped = false;
-
-        const cardContainer = document.getElementById('card-container');
-        const wordEl = document.getElementById('word');
-        const definitionEl = document.getElementById('definition');
-        const sentenceEl = document.getElementById('sentence');
-        const prevBtn = document.getElementById('prev-btn');
-        const nextBtn = document.getElementById('next-btn');
-        const flipBtnMobile = document.getElementById('flip-btn-mobile');
-        const progressText = document.getElementById('progress-text');
-        const progressBar = document.getElementById('progress-bar');
-        
-        function updateCard() {
-            const currentWord = vocabulary[currentCardIndex];
-            wordEl.textContent = currentWord.word;
-            definitionEl.textContent = currentWord.definition;
-            sentenceEl.textContent = currentWord.sentence;
-
-            // 更新進度
-            const progress = ((currentCardIndex + 1) / vocabulary.length) * 100;
-            progressBar.style.width = `${progress}%`;
-            progressText.textContent = `${currentCardIndex + 1} / ${vocabulary.length}`;
-            
-            // 如果卡片是翻轉的，先翻回正面
-            if (isFlipped) {
-                cardContainer.classList.remove('flipped');
-                isFlipped = false;
-            }
+    if (selected === correct) {
+        score++;
+        document.getElementById('quiz-feedback').textContent = '答對了！';
+        document.getElementById('quiz-feedback').className = 'font-bold text-green-600';
+    } else {
+        btn.classList.add('!bg-red-500', '!text-white', '!border-red-600');
+        document.getElementById('quiz-feedback').textContent = `答錯了，正確答案是：${correct}`;
+        document.getElementById('quiz-feedback').className = 'font-bold text-red-600';
+        // Ensure we don't add duplicates to incorrectAnswers
+        if (!incorrectAnswers.some(item => item.word === quizQuestions[currentQuizIndex].original.word)) {
+            incorrectAnswers.push(quizQuestions[currentQuizIndex].original);
         }
+    }
+    document.getElementById('quiz-next-btn').style.display = 'inline-block';
+}
 
-        function flipCard() {
-            isFlipped = !isFlipped;
-            cardContainer.classList.toggle('flipped');
-        }
+function nextQuizQuestion() {
+    currentQuizIndex++;
+    displayQuizQuestion();
+}
 
-        function nextCard() {
-            currentCardIndex++;
-            if (currentCardIndex >= vocabulary.length) {
-                currentCardIndex = 0; // 回到第一張
-            }
-            updateCard();
-        }
+function displayQuizResults() {
+    const percentage = quizQuestions.length > 0 ? (score / quizQuestions.length) * 100 : 100;
+    let message = '';
+    if (percentage === 100) message = '太棒了！全部答對，你真是個詞語大師！';
+    else if (percentage >= 80) message = '表現優異！繼續努力。';
+    else if (percentage >= 60) message = '還不錯！對於不熟悉的詞語可以多練習幾次。';
+    else message = '別灰心，多練習幾次就會更熟悉了！加油！';
 
-        function prevCard() {
-            currentCardIndex--;
-            if (currentCardIndex < 0) {
-                currentCardIndex = vocabulary.length - 1; // 到最後一張
-            }
-            updateCard();
-        }
-
-        // 事件監聽
-        nextBtn.addEventListener('click', nextCard);
-        prevBtn.addEventListener('click', prevCard);
-        flipBtnMobile.addEventListener('click', flipCard);
-
-        // 鍵盤左右鍵控制
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'ArrowRight') {
-                nextCard();
-            } else if (e.key === 'ArrowLeft') {
-                prevCard();
-            } else if (e.key === ' ' || e.key === 'Enter') {
-                e.preventDefault(); // 防止空格鍵滾動頁面
-                flipCard();
-            }
-        });
-
-        // 初始載入
-        updateCard();
-    </script>
+    quizScreen.innerHTML = `
+        <div class="text-center">
+            <h1 class="text-3xl font-bold text-sky-800 mb-4">測驗完成！</h1>
+            <p class="text-lg text-slate-600 mb-2">你的成績是：</p>
+            <p class="text-6xl font-bold text-slate-800 mb-8">${score} / ${quizQuestions.length}</p>
+            <p class="text-base text-slate-500 mb-8">${message}</p>
+            <div class="space-y-4 sm:space-y-0 sm:space-x-4">
+                <button onclick="initQuiz(vocabulary)" class="w-full sm:w-auto bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 px-8 rounded-full shadow-lg">
+                    完整再試一次
+                </button>
+                ${incorrectAnswers.length > 0 ? `<button onclick="initQuiz(incorrectAnswers)" class="w-full sm:w-auto bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 px-8 rounded-full shadow-lg">只練習錯題 (${incorrectAnswers.length})</button>` : ''}
+            </div>
+        </div>
+    `;
+}
+</script>
 </body>
 </html>
