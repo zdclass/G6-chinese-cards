@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>生詞練習卡 - 第三課 談遇見更好的自己</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            touch-action: manipulation; /* 禁用雙擊縮放 */
+        }
+        .card-container {
+            perspective: 1000px;
+        }
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+        .card-container.flipped .card-inner {
+            transform: rotateY(180deg);
+        }
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 2.5rem; /* 增加內邊距 */
+            border-radius: 1.5rem; /* 更圓的邊角 */
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+        .card-front {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            color: #0c4a6e;
+        }
+        .card-back {
+            background: linear-gradient(135deg, #fefce8 0%, #fffbeb 100%);
+            color: #713f12;
+            transform: rotateY(180deg);
+            overflow-y: auto; /* 當內容過多時滾動 */
+        }
+        .button {
+            transition: all 0.2s ease-in-out;
+        }
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        .button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 flex items-center justify-center min-h-screen p-4">
+
+    <div class="w-full max-w-2xl mx-auto">
+        <header class="text-center mb-6">
+            <h1 class="text-3xl font-bold text-sky-800">第三課 談遇見更好的自己</h1>
+            <p class="text-slate-500 mt-1">生詞練習卡</p>
+        </header>
+
+        <main>
+            <!-- Flashcard Container -->
+            <div id="card-container" class="card-container w-full h-80 sm:h-96 mb-6 cursor-pointer" onclick="flipCard()">
+                <div id="card-inner" class="card-inner">
+                    <!-- Card Front -->
+                    <div class="card-front">
+                        <h2 id="word" class="text-5xl md:text-7xl font-bold tracking-wider"></h2>
+                        <div class="absolute bottom-4 text-xs text-slate-400">點擊翻面</div>
+                    </div>
+                    <!-- Card Back -->
+                    <div class="card-back">
+                        <div class="w-full text-left">
+                            <h3 class="text-xl font-bold text-amber-800 mb-2">【解釋】</h3>
+                            <p id="definition" class="text-base md:text-lg mb-4 whitespace-pre-line"></p>
+                            <h3 class="text-xl font-bold text-amber-800 mb-2">【造句】</h3>
+                            <p id="sentence" class="text-base md:text-lg whitespace-pre-line"></p>
+                        </div>
+                         <div class="absolute bottom-4 text-xs text-slate-400">點擊翻面</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="flex items-center justify-center mb-6">
+                 <div id="progress-text" class="text-sm font-medium text-slate-600 mr-4">1 / 15</div>
+                 <div class="w-full bg-slate-200 rounded-full h-2.5">
+                    <div id="progress-bar" class="bg-sky-600 h-2.5 rounded-full" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <!-- Navigation Buttons -->
+            <div class="flex justify-between items-center">
+                <button id="prev-btn" class="button bg-white text-slate-700 py-3 px-6 rounded-full shadow-md flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+                    上一個
+                </button>
+                <button id="flip-btn-mobile" class="button bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 px-6 rounded-full shadow-lg md:hidden">
+                    翻面
+                </button>
+                <button id="next-btn" class="button bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 px-6 rounded-full shadow-lg flex items-center">
+                    下一個
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+                </button>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const vocabulary = [
+            { word: "揭示", definition: "揭露、公布。", sentence: "這起事件深刻揭示了性別平等的重要。" },
+            { word: "卓越", definition: "非常優秀，超乎常人。", sentence: "他的領導才能卓越，頗受主管重視。" },
+            { word: "培養", definition: "⑴ 長期策畫和訓練。\n⑵ 在適宜的環境中培植養育。", sentence: "⑴ 作文能力的培養，可從多看、多讀、多寫三方面著手。\n⑵ 目前本地香菇的栽培都是用太空包培養菌種。" },
+            { word: "總裁", definition: "某些政黨首領的名稱。銀行或財團亦設總裁。", sentence: "總公司宣布，明年度將任命他為新一任總裁。" },
+            { word: "瑣事", definition: "細小零碎的事情。", sentence: "他原本月底要出國旅遊，因為瑣事纏身，所以暫緩計畫。" },
+            { word: "方仲永", definition: "北宋時期江西金溪人，是北宋文學家王安石的散文〈傷仲永〉中的主角。方仲永天資聰穎，五歲時能作詩，被稱為神童。然而他最後因未求上進，導致才華荒廢。", sentence: "方仲永的故事告訴我們，天資再高，也需要後天的學習才能精進。" },
+            { word: "耕田", definition: "泛指耕種田地的一切活動。", sentence: "雖然豔陽高照，農夫仍然不辭辛苦的在田裡耕種。" },
+            { word: "賺錢", definition: "⑴ 賺取財利。\n⑵ 利潤較高的。", sentence: "⑴ 我們一旦步入社會，就會知道賺錢的辛苦。\n⑵ 根據調查，媒體經濟是未來十年數一數二賺錢的行業。" },
+            { word: "聰穎", definition: "非常聰明。", sentence: "弟弟既聰穎又用功，成績相當出色。" },
+            { word: "惋惜", definition: "嘆惜、令人感覺可惜。", sentence: "這麼聰明的人竟誤入歧途，不免令人惋惜。" },
+            { word: "欠缺", definition: "短少、不夠。", sentence: "這家公司因欠缺資金導致周轉不靈，已宣告破產。" },
+            { word: "驕傲自滿", definition: "自以為了不起而傲慢自大，感覺已經滿足。", sentence: "我們不能因為有一點點成就而驕傲自滿。" },
+            { word: "昨天", definition: "前一日。", sentence: "他因為昨天連夜趕報告，現在累得呼呼大睡。" },
+            { word: "耕耘", definition: "⑴ 比喻付出精神和勞力。\n⑵ 耕田與除草。泛指農田耕作的事情。", sentence: "⑴ 一分耕耘，一分收穫。\n⑵ 一番辛苦耕耘後，眼見稻浪層層，真令人欣慰。" },
+            { word: "茁壯", definition: "成長壯大。", sentence: "嫩苗要經過細心呵護，才能成長茁壯。" }
+        ];
+
+        let currentCardIndex = 0;
+        let isFlipped = false;
+
+        const cardContainer = document.getElementById('card-container');
+        const wordEl = document.getElementById('word');
+        const definitionEl = document.getElementById('definition');
+        const sentenceEl = document.getElementById('sentence');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const flipBtnMobile = document.getElementById('flip-btn-mobile');
+        const progressText = document.getElementById('progress-text');
+        const progressBar = document.getElementById('progress-bar');
+        
+        function updateCard() {
+            const currentWord = vocabulary[currentCardIndex];
+            wordEl.textContent = currentWord.word;
+            definitionEl.textContent = currentWord.definition;
+            sentenceEl.textContent = currentWord.sentence;
+
+            // 更新進度
+            const progress = ((currentCardIndex + 1) / vocabulary.length) * 100;
+            progressBar.style.width = `${progress}%`;
+            progressText.textContent = `${currentCardIndex + 1} / ${vocabulary.length}`;
+            
+            // 如果卡片是翻轉的，先翻回正面
+            if (isFlipped) {
+                cardContainer.classList.remove('flipped');
+                isFlipped = false;
+            }
+        }
+
+        function flipCard() {
+            isFlipped = !isFlipped;
+            cardContainer.classList.toggle('flipped');
+        }
+
+        function nextCard() {
+            currentCardIndex++;
+            if (currentCardIndex >= vocabulary.length) {
+                currentCardIndex = 0; // 回到第一張
+            }
+            updateCard();
+        }
+
+        function prevCard() {
+            currentCardIndex--;
+            if (currentCardIndex < 0) {
+                currentCardIndex = vocabulary.length - 1; // 到最後一張
+            }
+            updateCard();
+        }
+
+        // 事件監聽
+        nextBtn.addEventListener('click', nextCard);
+        prevBtn.addEventListener('click', prevCard);
+        flipBtnMobile.addEventListener('click', flipCard);
+
+        // 鍵盤左右鍵控制
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight') {
+                nextCard();
+            } else if (e.key === 'ArrowLeft') {
+                prevCard();
+            } else if (e.key === ' ' || e.key === 'Enter') {
+                e.preventDefault(); // 防止空格鍵滾動頁面
+                flipCard();
+            }
+        });
+
+        // 初始載入
+        updateCard();
+    </script>
+</body>
+</html>
